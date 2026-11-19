@@ -1,0 +1,207 @@
+#include <windows.h>
+#include <GL/glut.h>
+#include <math.h>
+
+float angle = 0.0f;
+bool isPaused = false;
+
+// Draw orbit path around the sun
+void DrawOrbit(float radius)
+{
+    glColor3f(0.4f, 0.4f, 0.4f);
+    glBegin(GL_LINE_LOOP);
+
+    for (int i = 0; i < 360; i++)
+    {
+        float theta = i * 3.14159f / 180.0f;
+        glVertex3f(radius * cos(theta), 0.0f, radius * sin(theta));
+    }
+
+    glEnd();
+}
+
+// Draw a planet with orbital motion and axial rotation
+void DrawPlanet(float distance, float size, float orbitSpeed,
+    float rotateSpeed, float r, float g, float b)
+{
+    glPushMatrix();
+
+    // Orbital motion around the sun
+    glRotatef(angle * orbitSpeed, 0.0f, 1.0f, 0.0f);
+    glTranslatef(distance, 0.0f, 0.0f);
+
+    // Axial rotation
+    glRotatef(angle * rotateSpeed, 0.0f, 1.0f, 0.0f);
+
+    GLfloat color[] = { r, g, b, 1.0f };
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, color);
+
+    glutSolidSphere(size, 40, 40);
+    glPopMatrix();
+}
+
+// Draw Saturn with rings
+void DrawSaturn()
+{
+    glPushMatrix();
+
+    glRotatef(angle * 1.0f, 0.0f, 1.0f, 0.0f);
+    glTranslatef(320.0f, 0.0f, 0.0f);
+
+    GLfloat saturnColor[] = { 0.9f, 0.7f, 0.4f, 1.0f };
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, saturnColor);
+
+    glutSolidSphere(25.0f, 40, 40);
+
+    // Rings
+    glDisable(GL_LIGHTING);
+    glColor3f(0.8f, 0.7f, 0.5f);
+    glRotatef(25.0f, 1.0f, 0.0f, 0.0f);
+    glutWireTorus(4.0, 45.0, 20, 80);
+    glEnable(GL_LIGHTING);
+
+    glPopMatrix();
+}
+
+// Draw Earth and Moon
+void DrawEarthWithMoon()
+{
+    glPushMatrix();
+
+    glRotatef(angle * 2.0f, 0.0f, 1.0f, 0.0f);
+    glTranslatef(190.0f, 0.0f, 0.0f);
+
+    GLfloat earthColor[] = { 0.0f, 0.4f, 1.0f, 1.0f };
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, earthColor);
+
+    glutSolidSphere(20.0f, 40, 40);
+
+    // Moon motion around Earth
+    glRotatef(angle * 6.0f, 0.0f, 1.0f, 0.0f);
+    glTranslatef(40.0f, 0.0f, 0.0f);
+
+    GLfloat moonColor[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, moonColor);
+
+    glutSolidSphere(6.0f, 20, 20);
+    glPopMatrix();
+}
+
+// Display scene
+void Display()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+
+    // Camera position
+    gluLookAt(0.0f, 250.0f, 750.0f,
+        0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f);
+
+    // Sun
+    GLfloat sunColor[] = { 1.0f, 0.8f, 0.0f, 1.0f };
+    GLfloat emission[] = { 1.0f, 0.6f, 0.0f, 1.0f };
+
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, sunColor);
+    glMaterialfv(GL_FRONT, GL_EMISSION, emission);
+
+    glutSolidSphere(45.0f, 50, 50);
+
+    GLfloat noEmission[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    glMaterialfv(GL_FRONT, GL_EMISSION, noEmission);
+
+    // Orbit paths
+    glDisable(GL_LIGHTING);
+
+    DrawOrbit(90.0f);
+    DrawOrbit(140.0f);
+    DrawOrbit(190.0f);
+    DrawOrbit(250.0f);
+    DrawOrbit(320.0f);
+
+    glEnable(GL_LIGHTING);
+
+    // Planets
+    DrawPlanet(90.0f, 10.0f, 4.0f, 3.0f, 0.5f, 0.5f, 0.5f); // Mercury
+    DrawPlanet(140.0f, 16.0f, 3.0f, 2.5f, 1.0f, 0.6f, 0.2f); // Venus
+    DrawEarthWithMoon(); // Earth + Moon
+    DrawPlanet(250.0f, 14.0f, 1.5f, 2.0f, 1.0f, 0.2f, 0.0f); // Mars
+    DrawSaturn();
+
+    glutSwapBuffers();
+}
+
+// Animation timer
+void Timer(int value)
+{
+    if (!isPaused)
+    {
+        angle += 0.5f;
+    }
+
+    if (angle > 360.0f)
+        angle -= 360.0f;
+
+    glutPostRedisplay();
+    glutTimerFunc(16, Timer, 0);
+}
+
+// Initial OpenGL settings
+void Initial()
+{
+    glClearColor(0.0f, 0.0f, 0.05f, 1.0f);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+
+    // Lighting position
+    GLfloat lightPosition[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    GLfloat lightColor[] = { 1.0f, 1.0f, 0.9f, 1.0f };
+
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor);
+
+    // Smooth shading
+    glShadeModel(GL_SMOOTH);
+
+    // Projection
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(45.0, 1.0, 1.0, 2000.0);
+    glMatrixMode(GL_MODELVIEW);
+}
+
+void Keyboard(unsigned char key, int x, int y)
+{
+    switch (key)
+    {
+    case 'p':
+    case 'P':
+        isPaused = !isPaused;
+        break;
+
+    case 27:
+        exit(0);
+        break;
+    }
+}
+
+int main(int argc, char** argv)
+{
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowSize(700, 700);
+    glutInitWindowPosition(100, 100);
+
+    glutCreateWindow("Solar System with Realistic Motion");
+
+    Initial();
+
+    glutDisplayFunc(Display);
+    glutKeyboardFunc(Keyboard);
+    glutTimerFunc(0, Timer, 0);
+
+    glutMainLoop();
+
+    return 0;
+}
